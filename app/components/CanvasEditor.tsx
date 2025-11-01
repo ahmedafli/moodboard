@@ -79,9 +79,9 @@ export default function CanvasEditor(props: CanvasEditorProps) {
     onImageClick,
   } = props;
 
-  // Expand the Stage size to allow more dragging space
-  const stageWidth = Math.max(width * 1.5, 1440); // 1.5x canvas width or minimum 1440px
-  const stageHeight = Math.max(height * 1.5, 810); // 1.5x canvas height or minimum 810px
+  // Match the Stage size to the canvas to keep the entire moodboard visible/responsive
+  const stageWidth = width;
+  const stageHeight = height;
 
   const stageRef = useRef<Konva.Stage>(null);
   const bgImage = useHTMLImage(background?.url);

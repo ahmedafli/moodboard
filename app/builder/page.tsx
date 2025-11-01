@@ -57,6 +57,45 @@ export default function BuilderPage() {
   const [brushSize, setBrushSize] = useState<number>(24);
   const [polygonPoints, setPolygonPoints] = useState<{ x: number; y: number }[]>([]);
   const [exportToken, setExportToken] = useState<number>(0);
+  const [canvasSize, setCanvasSize] = useState({ width: 960, height: 540 });
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  // Make moodboard canvas responsive while preserving 16:9 aspect ratio
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (!moodboardRef.current) return;
+      const rect = moodboardRef.current.getBoundingClientRect();
+      const aspectRatio = 16 / 9;
+      let width = rect.width;
+      let height = width / aspectRatio;
+
+      if (height > rect.height) {
+        height = rect.height;
+        width = height * aspectRatio;
+      }
+
+      setCanvasSize({ width: Math.floor(width), height: Math.floor(height) });
+    };
+
+    const timeoutId = setTimeout(() => {
+      updateCanvasSize();
+      if (moodboardRef.current && typeof ResizeObserver !== 'undefined') {
+        resizeObserverRef.current = new ResizeObserver(updateCanvasSize);
+        resizeObserverRef.current.observe(moodboardRef.current);
+      }
+    }, 0);
+
+    window.addEventListener('resize', updateCanvasSize);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateCanvasSize);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+    };
+  }, []);
 
   // Helper function to get proxied image URL for Google Drive images
   const getImageUrl = (imageUrl: string) => {
@@ -353,26 +392,28 @@ export default function BuilderPage() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold text-gray-900 mb-2">Moodboard Builder</h1>
-      <p className="text-gray-600 mb-6">Select product images to add them to your moodboard slide.</p>
+    <div className="min-h-screen bg-gray-50">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="px-4 sm:px-0 space-y-6">
+          <h1 className="text-2xl font-semibold text-gray-900">Moodboard Builder</h1>
+          <p className="text-gray-600">Select product images to add them to your moodboard slide.</p>
 
-      <div className="flex gap-6">
-        {/* Left: Larger Moodboard Slide */}
-        <div className="flex-1">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm h-[70vh] flex flex-col">
+          <div className="flex flex-col gap-6">
+        {/* Top: Moodboard Slide */}
+        <div className="w-full">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-[65vh] xl:h-[70vh] flex flex-col">
             <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-base font-semibold text-gray-900">Moodboard Slide</h2>
               <span className="text-xs text-gray-500">{selectedImageUrls.length} selected</span>
             </div>
             <div 
               ref={moodboardRef}
-              className="flex-1 relative overflow-hidden bg-gray-100"
+              className="flex-1 relative overflow-hidden bg-gray-100 flex items-center justify-center"
             >
-              <div className="absolute inset-0">
+              <div className="w-full h-full flex items-center justify-center p-2">
                 <CanvasEditor
-                  width={960}
-                  height={540}
+                  width={canvasSize.width}
+                  height={canvasSize.height}
                   background={backgroundImage ? { url: backgroundImage.url } : null}
                   items={draggableImages.map(d => ({ 
                     id: d.id, 
@@ -540,17 +581,17 @@ export default function BuilderPage() {
           </div>
         </div>
 
-        {/* Right: Products listed vertically */}
-        <div className="w-full max-w-xl">
+        {/* Bottom: Products listed */}
+        <div className="w-full">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-medium text-gray-900">Products</h2>
+            <h2 className="text-lg sm:text-xl font-medium text-gray-900">Products</h2>
             {isLoadingProducts && <span className="text-sm text-gray-500">Loading...</span>}
           </div>
 
-          <div className="space-y-4 overflow-auto max-h-[70vh] pr-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 max-h-[50vh] sm:max-h-[55vh] md:max-h-[60vh] overflow-y-auto pr-1">
             {products.map((product) => (
-              <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-md transition p-3">
-                <div className="aspect-[4/3] bg-gray-100 rounded-md overflow-hidden mb-3 relative">
+              <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-md transition p-2 sm:p-3">
+                <div className="aspect-[4/3] bg-gray-100 rounded-md overflow-hidden mb-2 sm:mb-3 relative">
                   <img 
                     src={getImageUrl(product.image)} 
                     alt={product.productName} 
@@ -564,27 +605,27 @@ export default function BuilderPage() {
                     }}
                   />
                 </div>
-                <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
                   <div>
-                    <div className="text-sm font-semibold text-gray-900">{product.productName}</div>
+                    <div className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2">{product.productName}</div>
                     <div className="text-xs text-gray-500">{product.itemCode}</div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     {getInstanceCount(product.image) > 0 && (
                       <span className="text-xs text-gray-500">×{getInstanceCount(product.image)}</span>
                     )}
                     <button
                       onClick={() => addToMoodboard(product.image)}
-                      className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
+                      className="flex-1 sm:flex-initial px-2 sm:px-2.5 py-1.5 text-xs font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700"
                     >
                       Add{getInstanceCount(product.image) > 0 ? ' More' : ''}
                     </button>
                     {getInstanceCount(product.image) > 0 && (
                       <button
                         onClick={() => removeFromMoodboard(product.image)}
-                        className="px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100"
+                        className="flex-1 sm:flex-initial px-2 sm:px-2.5 py-1.5 text-xs font-medium rounded-md bg-red-50 text-red-700 hover:bg-red-100"
                       >
-                        Remove All
+                        Remove
                       </button>
                     )}
                   </div>
@@ -593,7 +634,9 @@ export default function BuilderPage() {
             ))}
           </div>
         </div>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
