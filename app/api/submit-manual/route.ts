@@ -35,7 +35,13 @@ export async function POST(request: NextRequest) {
     const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
 
     try {
-      const webhookUrl = 'https://unrived-niels-foggier.ngrok-free.dev/webhook-test/47a63ee7-d565-439c-ad32-67d63c6cde71';
+      const webhookUrl = process.env.N8N_MANUAL_SUBMIT_WEBHOOK_URL;
+      if (!webhookUrl) {
+        return NextResponse.json(
+          { success: false, error: 'Server misconfiguration: N8N_MANUAL_SUBMIT_WEBHOOK_URL is missing' },
+          { status: 500 }
+        );
+      }
       
       const webhookResponse = await fetch(
         webhookUrl,
