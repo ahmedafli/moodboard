@@ -36,15 +36,12 @@ export async function POST(request: NextRequest) {
 
     try {
       const webhookUrl = process.env.N8N_MANUAL_SUBMIT_WEBHOOK_URL;
-<<<<<<< HEAD
       if (!webhookUrl) {
         return NextResponse.json(
           { success: false, error: 'Server misconfiguration: N8N_MANUAL_SUBMIT_WEBHOOK_URL is missing' },
           { status: 500 }
         );
       }
-=======
->>>>>>> cea1f81a25dd4622fdd00cc64ed676747864172d
       
       const webhookResponse = await fetch(
         webhookUrl,
