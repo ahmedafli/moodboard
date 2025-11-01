@@ -289,13 +289,19 @@ export default function CanvasEditor(props: CanvasEditorProps) {
           ref={stageRef as any}
           width={stageWidth}
           height={stageHeight}
+          onPointerDown={startPainting}
+          onPointerUp={stopPainting}
+          onPointerMove={paint}
           onMouseDown={startPainting}
           onMouseUp={stopPainting}
           onMouseMove={paint}
           style={{ 
             backgroundColor: 'transparent',
             border: 'none',
-            outline: 'none'
+            outline: 'none',
+            touchAction: 'none',
+            WebkitUserSelect: 'none',
+            msTouchAction: 'none'
           }}
         >
           {/* Background */}
