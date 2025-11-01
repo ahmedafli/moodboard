@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Stage, Layer, Image as KonvaImage, Group, Rect, Line, Transformer } from "react-konva";
+import { Stage, Layer, Image as KonvaImage, Group, Rect, Line } from "react-konva";
 import Konva from "konva";
 
 type FurnitureItem = {
@@ -84,8 +84,6 @@ export default function CanvasEditor(props: CanvasEditorProps) {
   const stageHeight = height;
 
   const stageRef = useRef<Konva.Stage>(null);
-  const transformerRef = useRef<Konva.Transformer>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const bgImage = useHTMLImage(background?.url);
 
   // Brush mask is drawn on its own layer via a temporary canvas
@@ -283,25 +281,6 @@ export default function CanvasEditor(props: CanvasEditorProps) {
     }
   }, [itemsGroupRef, items, brushMaskImage, maskMode]);
 
-  // Attach transformer to currently selected image
-  useEffect(() => {
-    const stage = stageRef.current;
-    const transformer = transformerRef.current;
-    if (!stage || !transformer) return;
-    if (!selectedId) {
-      transformer.nodes([]);
-      transformer.getLayer()?.batchDraw();
-      return;
-    }
-    const node = stage.findOne(`#node-${selectedId}`) as Konva.Image | null;
-    if (node) {
-      transformer.nodes([node]);
-    } else {
-      transformer.nodes([]);
-    }
-    transformer.getLayer()?.batchDraw();
-  }, [selectedId, items, width, height]);
-
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-2"><div className="text-sm text-gray-600">Canvas {width}×{height}</div></div>
@@ -310,13 +289,7 @@ export default function CanvasEditor(props: CanvasEditorProps) {
           ref={stageRef as any}
           width={stageWidth}
           height={stageHeight}
-          onMouseDown={(e) => {
-            // Deselect when clicking on empty area
-            if (e.target === e.target.getStage()) {
-              setSelectedId(null);
-            }
-            startPainting();
-          }}
+          onMouseDown={startPainting}
           onMouseUp={stopPainting}
           onMouseMove={paint}
           style={{ 
@@ -340,15 +313,9 @@ export default function CanvasEditor(props: CanvasEditorProps) {
                 item={item}
                 onDragMove={handleDragMove}
                 onTransformEnd={handleTransformEnd}
-                onImageClick={(id) => {
-                  setSelectedId(id);
-                  onImageClick?.(id);
-                }}
-                isSelected={selectedId === item.id}
+                onImageClick={onImageClick}
               />
             ))}
-            {/* Single transformer for selected node */}
-            <Transformer ref={transformerRef as any} rotateEnabled enabledAnchors={["top-left","top-right","bottom-left","bottom-right"]} anchorSize={8} />
           </Layer>
 
           {/* Brush drawing layer (user paints here). Keep above for input, but invisible to final due to destination-in on items */}
@@ -393,22 +360,36 @@ function DraggableTransformableImage({
   onDragMove,
   onTransformEnd,
   onImageClick,
-  isSelected,
 }: {
   item: FurnitureItem;
   onDragMove: (id: string, pos: { x: number; y: number }) => void;
   onTransformEnd: (id: string, node: Konva.Image) => void;
   onImageClick?: (imageId: string) => void;
-  isSelected?: boolean;
 }) {
   const image = useHTMLImage(item.url);
   const ref = useRef<Konva.Image>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    const tr = new Konva.Transformer({
+      nodes: [node],
+      rotateEnabled: true,
+      enabledAnchors: ["top-left", "top-right", "bottom-left", "bottom-right"],
+      anchorSize: 8,
+      borderEnabled: true,
+    });
+    node.getLayer()?.add(tr);
+    node.getLayer()?.draw();
+    return () => {
+      tr.destroy();
+    };
+  }, [image]);
 
   return (
     <Group>
       <KonvaImage
         ref={ref as any}
-        id={`node-${item.id}`}
         image={image || undefined}
         x={item.x}
         y={item.y}
