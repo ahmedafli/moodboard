@@ -86,7 +86,18 @@ export default function CanvasEditor(props: CanvasEditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const bgImage = useHTMLImage(background?.url);
+
+  // Detect if on mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Brush mask is drawn on its own layer via a temporary canvas
   const brushLayerRef = useRef<Konva.Layer>(null);
@@ -355,7 +366,8 @@ export default function CanvasEditor(props: CanvasEditorProps) {
               ref={transformerRef as any}
               rotateEnabled
               enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
-              anchorSize={8}
+              anchorSize={isMobile ? 20 : 8}
+              borderStrokeWidth={isMobile ? 3 : 1}
             />
           </Layer>
 
@@ -428,6 +440,7 @@ function DraggableTransformableImage({
         onDragMove={(e) => onDragMove(item.id, e.target.position())}
         onTransformEnd={(e) => onTransformEnd(item.id, e.target as Konva.Image)}
         onClick={() => onImageClick?.(item.id)}
+        onTap={() => onImageClick?.(item.id)}
         shadowEnabled={!!item.shadow}
         shadowColor="rgba(0,0,0,0.4)"
         shadowBlur={12}

@@ -304,16 +304,6 @@ export default function BuilderPage() {
     }
   };
 
-  const updateBackgroundSize = (width: number, height: number) => {
-    if (!backgroundImage) return;
-    setBackgroundImage({ ...backgroundImage, width, height });
-  };
-
-  const updateBackgroundLayer = (zIndex: number) => {
-    if (!backgroundImage) return;
-    setBackgroundImage({ ...backgroundImage, zIndex });
-  };
-
   const rotateImageLeft = (imageId: string) => {
     setDraggableImages((prev) =>
       prev.map((img) =>
@@ -345,11 +335,17 @@ export default function BuilderPage() {
   };
 
   const removeImage = (imageId: string) => {
-    const image = draggableImages.find(img => img.id === imageId);
-    if (image) {
-      removeFromMoodboard(image.url);
-      setSelectedImageId(null);
+    // Remove only the specific image instance (by ID), not all instances of that URL
+    setDraggableImages((prev) => prev.filter((img) => img.id !== imageId));
+    
+    // Update selectedImageUrls to remove the URL if no more instances exist
+    const remainingImages = draggableImages.filter((img) => img.id !== imageId);
+    const urlToCheck = draggableImages.find((img) => img.id === imageId)?.url;
+    if (urlToCheck && !remainingImages.some((img) => img.url === urlToCheck)) {
+      setSelectedImageUrls((prev) => prev.filter((u) => u !== urlToCheck));
     }
+    
+    setSelectedImageId(null);
   };
 
   const downloadMoodboard = async () => {
@@ -473,36 +469,6 @@ export default function BuilderPage() {
                 )}
               </div>
               
-              {backgroundImage && (
-                <div className="bg-blue-50 p-3 rounded-md space-y-2">
-                  <div className="text-sm font-medium text-blue-900">Background Controls:</div>
-                  <div className="flex gap-2 items-center">
-                    <label className="text-xs text-blue-700">Size:</label>
-                    <input
-                      type="range"
-                      min="200"
-                      max="800"
-                      value={backgroundImage.width}
-                      onChange={(e) => updateBackgroundSize(parseInt(e.target.value), backgroundImage.height)}
-                      className="flex-1"
-                    />
-                    <span className="text-xs text-blue-600">{backgroundImage.width}px</span>
-                  </div>
-                  <div className="flex gap-2 items-center">
-                    <label className="text-xs text-blue-700">Layer:</label>
-                    <select
-                      value={backgroundImage.zIndex}
-                      onChange={(e) => updateBackgroundLayer(parseInt(e.target.value))}
-                      className="text-xs rounded border border-blue-300 px-2 py-1"
-                    >
-                      <option value={-1}>Behind Images</option>
-                      <option value={0}>Same Level</option>
-                      <option value={1}>Front of Images</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-              
               {/* Clear Moodboard Button */}
               {(draggableImages.length > 0 || backgroundImage) && (
                 <div className="pt-2 border-t border-gray-200">
@@ -566,16 +532,9 @@ export default function BuilderPage() {
               <button
                 onClick={downloadMoodboard}
                 disabled={draggableImages.length === 0 && !backgroundImage}
-                className="flex-1 px-4 py-2 rounded-md text-white text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 rounded-md text-white text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Download Moodboard
-              </button>
-              <button
-                onClick={handleGenerateMoodboard}
-                disabled={isGenerating || selectedImageUrls.length === 0}
-                className="flex-1 px-4 py-2 rounded-md text-white text-sm font-medium bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? 'Generating…' : 'Generate Moodboard'}
               </button>
             </div>
           </div>
