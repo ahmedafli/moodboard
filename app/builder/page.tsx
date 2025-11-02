@@ -350,6 +350,41 @@ export default function BuilderPage() {
 
   const downloadMoodboard = async () => {
     if (draggableImages.length === 0 && !backgroundImage) return;
+    
+    // Prepare payload with products and quantities
+    const productCountMap = new Map<string, number>();
+    draggableImages.forEach(img => {
+      productCountMap.set(img.url, (productCountMap.get(img.url) || 0) + 1);
+    });
+
+    // Match image URLs to products and build payload
+    const payload = {
+      products: Array.from(productCountMap.entries()).map(([imageUrl, quantity]) => {
+        const product = products.find(p => p.image === imageUrl);
+        return {
+          image: imageUrl,
+          productName: product?.productName || '',
+          itemCode: product?.itemCode || '',
+          price: product?.price || '',
+          quantity: quantity
+        };
+      })
+    };
+
+    // Send POST request to webhook (fire and forget, don't block download)
+    const webhookUrl = process.env.N8N_QTY_PRICE_TOTAL_download;
+    if (webhookUrl) {
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }).catch(err => {
+        // Silently fail - don't interrupt download if webhook fails
+        console.error('Failed to send webhook:', err);
+      });
+    }
+
+    // Proceed with normal download immediately (don't wait for webhook)
     setExportToken((t) => t + 1);
   };
 
