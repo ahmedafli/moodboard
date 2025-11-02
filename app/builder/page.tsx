@@ -371,18 +371,16 @@ export default function BuilderPage() {
       })
     };
 
-    // Send POST request to webhook (fire and forget, don't block download)
-    const webhookUrl = process.env.N8N_QTY_PRICE_TOTAL_download;
-    if (webhookUrl) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      }).catch(err => {
-        // Silently fail - don't interrupt download if webhook fails
-        console.error('Failed to send webhook:', err);
-      });
-    }
+    // Send POST request to webhook via API proxy (fire and forget, don't block download)
+    // Using API route to avoid CORS issues
+    fetch('/api/moodboard-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).catch(err => {
+      // Silently fail - don't interrupt download if webhook fails
+      console.error('Failed to send webhook:', err);
+    });
 
     // Proceed with normal download immediately (don't wait for webhook)
     setExportToken((t) => t + 1);
