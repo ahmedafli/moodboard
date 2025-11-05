@@ -437,6 +437,16 @@ function DraggableTransformableImage({
         rotation={item.rotation || 0}
         scaleX={item.flipHorizontal ? -1 : 1}
         draggable
+        dragBoundFunc={(pos) => {
+          const stage = ref.current?.getStage();
+          const stageWidth = stage?.width() || 0;
+          const stageHeight = stage?.height() || 0;
+          const maxX = Math.max(0, stageWidth - item.width);
+          const maxY = Math.max(0, stageHeight - item.height);
+          const clampedX = Math.min(Math.max(0, pos.x), maxX);
+          const clampedY = Math.min(Math.max(0, pos.y), maxY);
+          return { x: clampedX, y: clampedY };
+        }}
         onDragMove={(e) => onDragMove(item.id, e.target.position())}
         onTransformEnd={(e) => onTransformEnd(item.id, e.target as Konva.Image)}
         onClick={() => onImageClick?.(item.id)}

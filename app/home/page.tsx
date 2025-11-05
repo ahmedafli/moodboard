@@ -281,7 +281,7 @@ export default function HomePage() {
             </p>
             <div className="bg-green-50 border border-green-200 rounded-md p-4">
               <p className="text-green-800">
-                ✅ Authentication successful! Your username is saved in localStorage.
+                ✅ Authentication successful!.
               </p>
             </div>
           </div>
@@ -428,11 +428,11 @@ export default function HomePage() {
           {products.length > 0 && (
             <div className="bg-white shadow rounded-lg p-6 mt-6">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Products</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                 {products.map((product) => {
                   const isRemoving = removingBackground.has(product.id);
                   return (
-                    <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col">
+                    <div key={product.id} className="bg-white rounded-lg shadow hover:shadow-md transition p-4 flex flex-col h-full">
                       <div className="aspect-[4/3] bg-gray-100 rounded-md overflow-hidden mb-4 relative">
                         <img
                           key={`img-${product.id}-${product.image}`}
@@ -453,13 +453,15 @@ export default function HomePage() {
                           </div>
                         )}
                       </div>
-                      <h5 className="text-lg font-semibold text-gray-900">{product.productName}</h5>
-                      <p className="mt-1 text-sm text-gray-600">{product.itemCode}</p>
-                      <p className="mt-3 text-base font-bold text-green-700">{product.price}</p>
+                      <div className="flex-1 flex flex-col">
+                        <h5 className="text-lg font-semibold text-gray-900">{product.productName}</h5>
+                        <p className="mt-1 text-sm text-gray-600">{product.itemCode}</p>
+                        <p className="mt-3 text-base font-bold text-green-700">{product.price}</p>
+                      </div>
                       <button
                         onClick={() => handleRemoveBackground(product)}
                         disabled={isRemoving}
-                        className="mt-4 w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="mt-auto w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isRemoving ? 'Removing Background...' : 'Remove Background'}
                       </button>

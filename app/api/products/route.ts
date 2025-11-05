@@ -18,10 +18,10 @@ export async function GET() {
 
     // 🔹 Normalize keys (remove spaces)
     const products = rawData.map((p: any) => ({
-      image: p.image,
-      productName: p['product name'],
-      itemCode: p['item code'],
-      price: p.price,
+      image: p.IMAGE,
+      productName: p['PRIDUCT DESCRIPTION'],
+      itemCode: p['CODE'],
+      price: p.PRICE,
     }));
 
     console.log('[products API] Normalized products:', products);

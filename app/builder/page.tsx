@@ -60,16 +60,18 @@ export default function BuilderPage() {
   const [canvasSize, setCanvasSize] = useState({ width: 960, height: 540 });
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  // Make moodboard canvas responsive while preserving 16:9 aspect ratio
+  // Make moodboard canvas responsive while preserving 16:9 aspect ratio (cover the container)
   useEffect(() => {
     const updateCanvasSize = () => {
       if (!moodboardRef.current) return;
       const rect = moodboardRef.current.getBoundingClientRect();
       const aspectRatio = 16 / 9;
+      // Start by filling width, then expand to ensure full height (cover behavior)
       let width = rect.width;
       let height = width / aspectRatio;
 
-      if (height > rect.height) {
+      // If height is less than container, grow to fill height instead (crop sides)
+      if (height < rect.height) {
         height = rect.height;
         width = height * aspectRatio;
       }
@@ -348,6 +350,28 @@ export default function BuilderPage() {
     setSelectedImageId(null);
   };
 
+  const bringToFront = (imageId: string) => {
+    setDraggableImages((prev) => {
+      const idx = prev.findIndex((img) => img.id === imageId);
+      if (idx === -1) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(idx, 1);
+      next.push(item);
+      return next;
+    });
+  };
+
+  const sendToBack = (imageId: string) => {
+    setDraggableImages((prev) => {
+      const idx = prev.findIndex((img) => img.id === imageId);
+      if (idx === -1) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(idx, 1);
+      next.unshift(item);
+      return next;
+    });
+  };
+
   const downloadMoodboard = async () => {
     if (draggableImages.length === 0 && !backgroundImage) return;
     
@@ -439,7 +463,7 @@ export default function BuilderPage() {
               ref={moodboardRef}
               className="flex-1 relative overflow-hidden bg-gray-100 flex items-center justify-center"
             >
-              <div className="w-full h-full flex items-center justify-center p-2">
+              <div className="w-full h-full flex items-center justify-center">
                 <CanvasEditor
                   width={canvasSize.width}
                   height={canvasSize.height}
@@ -540,6 +564,20 @@ export default function BuilderPage() {
                     title="Flip Horizontal"
                   >
                     ↔
+                  </button>
+                  <button
+                    onClick={() => bringToFront(selectedImageId)}
+                    className="px-2 py-1 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    title="Bring to Front"
+                  >
+                    ⬆
+                  </button>
+                  <button
+                    onClick={() => sendToBack(selectedImageId)}
+                    className="px-2 py-1 text-xs font-medium rounded-md bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    title="Send to Back"
+                  >
+                    ⬇
                   </button>
                   <button
                     onClick={() => removeImage(selectedImageId)}
