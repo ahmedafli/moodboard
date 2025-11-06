@@ -16,10 +16,10 @@ export async function GET() {
 
     const rawData = JSON.parse(text);
 
-    // 🔹 Normalize keys (remove spaces)
+    // 🔹 Normalize keys (handle both "PRODUCT DESCRIPTION" and "PRIDUCT DESCRIPTION" for backwards compatibility)
     const products = rawData.map((p: any) => ({
       image: p.IMAGE,
-      productName: p['PRIDUCT DESCRIPTION'],
+      productName: p['PRODUCT DESCRIPTION'] || p['PRIDUCT DESCRIPTION'],
       itemCode: p['CODE'],
       price: p.PRICE,
     }));
