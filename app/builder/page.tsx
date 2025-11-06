@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { getCachedProducts, loadProductsOnce } from "../lib/productsCache";
 import dynamic from "next/dynamic";
 
@@ -51,6 +52,15 @@ export default function BuilderPage() {
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const moodboardRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  
+  // Check authentication synchronously to prevent flash
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('username');
+    }
+    return false;
+  });
 
   // Canvas editor state
   const [maskMode, setMaskMode] = useState<"none" | "brush" | "polygon">("none");
@@ -59,6 +69,25 @@ export default function BuilderPage() {
   const [exportToken, setExportToken] = useState<number>(0);
   const [canvasSize, setCanvasSize] = useState({ width: 960, height: 540 });
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+
+  // 🔹 Check login state and redirect if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, router]);
+
+  // Don't render page content if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Make moodboard canvas responsive while preserving 16:9 aspect ratio (cover the container)
   useEffect(() => {
