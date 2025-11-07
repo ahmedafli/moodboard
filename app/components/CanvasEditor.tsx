@@ -365,7 +365,16 @@ export default function CanvasEditor(props: CanvasEditorProps) {
             <Transformer
               ref={transformerRef as any}
               rotateEnabled
-              enabledAnchors={["top-left", "top-right", "bottom-left", "bottom-right"]}
+              enabledAnchors={[
+                "top-left",
+                "top-center",
+                "top-right",
+                "middle-right",
+                "bottom-right",
+                "bottom-center",
+                "bottom-left",
+                "middle-left",
+              ]}
               anchorSize={isMobile ? 20 : 8}
               borderStrokeWidth={isMobile ? 3 : 1}
             />
