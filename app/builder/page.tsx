@@ -45,6 +45,9 @@ export default function BuilderPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateMessage, setGenerateMessage] = useState<string>("");
   const [generateError, setGenerateError] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string>("");
+  const [saveError, setSaveError] = useState<string>("");
   const [draggedImage, setDraggedImage] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingBackground, setIsDraggingBackground] = useState(false);
@@ -473,6 +476,62 @@ export default function BuilderPage() {
     }
   };
 
+  const handleSaveMoodboard = async () => {
+    if (isSaving) return;
+    
+    // Get username from localStorage
+    const username = localStorage.getItem('username');
+    if (!username) {
+      setSaveError('Username not found. Please log in again.');
+      return;
+    }
+
+    // Prompt for name
+    const name = prompt('Enter a name for this saved moodboard:');
+    if (!name || name.trim() === '') {
+      return; // User cancelled or entered empty name
+    }
+
+    setIsSaving(true);
+    setSaveMessage("");
+    setSaveError("");
+
+    try {
+      const webhookUrl = process.env.NEXT_PUBLIC_SAVE_MOODBOARD_WEBHOOK_URL;
+      if (!webhookUrl) {
+        throw new Error('NEXT_PUBLIC_SAVE_MOODBOARD_WEBHOOK_URL is not configured');
+      }
+      
+      const res = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true' // Skip ngrok browser warning
+        },
+        body: JSON.stringify({
+          username,
+          name: name.trim(),
+          draggableImages,
+          backgroundImage,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+
+      const text = await res.text();
+      if (!res.ok) {
+        throw new Error(text || 'Failed to save moodboard');
+      }
+
+      setSaveMessage(`Moodboard "${name.trim()}" saved successfully!`);
+      // Clear message after 3 seconds
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (e: any) {
+      setSaveError(e?.message || 'Unexpected error while saving moodboard');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -628,11 +687,24 @@ export default function BuilderPage() {
             {generateError && (
               <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{generateError}</div>
             )}
+            {saveMessage && (
+              <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">{saveMessage}</div>
+            )}
+            {saveError && (
+              <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2">{saveError}</div>
+            )}
             <div className="flex gap-2">
+              <button
+                onClick={handleSaveMoodboard}
+                disabled={isSaving || (draggableImages.length === 0 && !backgroundImage)}
+                className="px-4 py-2 rounded-md text-white text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? 'Saving...' : 'Save Moodboard'}
+              </button>
               <button
                 onClick={downloadMoodboard}
                 disabled={draggableImages.length === 0 && !backgroundImage}
-                className="w-full px-4 py-2 rounded-md text-white text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 rounded-md text-white text-sm font-medium bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Download Moodboard
               </button>

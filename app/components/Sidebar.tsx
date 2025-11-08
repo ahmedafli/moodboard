@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Wand2, Home } from "lucide-react";
+import { Wand2, Home, Folder } from "lucide-react";
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -45,6 +45,10 @@ export default function Sidebar() {
             <Wand2 className="w-5 h-5" />
             <span className="text-sm font-medium">Create</span>
           </Link>
+          <Link href="/projects" className={mobileLinkClass(pathname === '/projects')}>
+            <Folder className="w-5 h-5" />
+            <span className="text-sm font-medium">Projects</span>
+          </Link>
         </div>
       </nav>
 
@@ -61,6 +65,10 @@ export default function Sidebar() {
           <Link href="/builder" className={linkClass(pathname === '/builder')}>
             <Wand2 className="w-5 h-5" />
             <span className="text-sm font-medium">Create Moodboard</span>
+          </Link>
+          <Link href="/projects" className={linkClass(pathname === '/projects')}>
+            <Folder className="w-5 h-5" />
+            <span className="text-sm font-medium">Projects</span>
           </Link>
         </nav>
       </aside>
