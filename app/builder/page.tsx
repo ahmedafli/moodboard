@@ -49,12 +49,14 @@ export default function BuilderPage() {
   const [saveMessage, setSaveMessage] = useState<string>("");
   const [saveError, setSaveError] = useState<string>("");
   const [draggedImage, setDraggedImage] = useState<string | null>(null);
+  const [scraped_products, setScrapedProducts] = useState<any[]>([]);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDraggingBackground, setIsDraggingBackground] = useState(false);
   const [backgroundDragOffset, setBackgroundDragOffset] = useState({ x: 0, y: 0 });
   const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const moodboardRef = useRef<HTMLDivElement>(null);
+  const hasFetchedScrapedProducts = useRef(false);
   const router = useRouter();
   
   // Check authentication synchronously to prevent flash
@@ -129,6 +131,40 @@ export default function BuilderPage() {
         resizeObserverRef.current = null;
       }
     };
+  }, []);
+
+  // Fetch scraped products via internal API (server-side proxy) when /builder page is accessed
+  useEffect(() => {
+    // In React 18 StrictMode, effects can run twice in dev; guard to only fetch once
+    if (hasFetchedScrapedProducts.current) return;
+    hasFetchedScrapedProducts.current = true;
+
+    const fetchScrapedProducts = async () => {
+      try {
+        const res = await fetch("/api/scraped-products");
+        const json = await res.json();
+
+        if (!json?.success) {
+          // If webhook returns 404 or any non-success, just log and treat as "no scraped products"
+          console.warn(
+            "Scraped products webhook did not return success:",
+            json?.status,
+            json?.statusText,
+            json?.error
+          );
+          setScrapedProducts([]);
+          return;
+        }
+
+        const data = json?.data ?? [];
+        console.log("SCRAPED PRODUCTS:", data);
+        setScrapedProducts(Array.isArray(data) ? data : [data]);
+      } catch (error) {
+        console.error("Error fetching scraped products:", error);
+      }
+    };
+
+    fetchScrapedProducts();
   }, []);
 
   // Helper function to get proxied image URL for Google Drive images
@@ -416,7 +452,7 @@ export default function BuilderPage() {
     // Match image URLs to products and build payload
     const payload = {
       products: Array.from(productCountMap.entries()).map(([imageUrl, quantity]) => {
-        const product = products.find(p => p.image === imageUrl);
+        const product = scraped_products.find(p => p.image === imageUrl);
         return {
           image: imageUrl,
           productName: product?.productName || '',
