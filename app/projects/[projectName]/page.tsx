@@ -242,17 +242,28 @@ export default function ProjectViewPage() {
         
         setDraggableImages(parsedDraggableImages);
         
-        // Handle backgroundImage
-        if (projectData && projectData.backgroundImage) {
-          if (typeof projectData.backgroundImage === 'string') {
+        // Handle background image (support both backgroundImage and backgroundImages keys)
+        const rawBackground =
+          projectData?.backgroundImage ?? projectData?.backgroundImages;
+
+        if (rawBackground) {
+          if (typeof rawBackground === 'string') {
             try {
-              const parsedBg = JSON.parse(projectData.backgroundImage);
+              const parsedBg = JSON.parse(rawBackground);
               setBackgroundImage(parsedBg);
             } catch (e) {
-              console.error('Error parsing backgroundImage:', e);
+              console.warn('Background value is plain string, using default sizing.');
+              setBackgroundImage({
+                url: rawBackground,
+                x: 0,
+                y: 0,
+                width: 960,
+                height: 540,
+                zIndex: -1,
+              });
             }
           } else {
-            setBackgroundImage(projectData.backgroundImage);
+            setBackgroundImage(rawBackground);
           }
         }
         

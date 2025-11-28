@@ -18,6 +18,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
+  const [actionMessage, setActionMessage] = useState<string>("");
   const [deletingProject, setDeletingProject] = useState<string | null>(null);
   const router = useRouter();
 
@@ -101,19 +102,24 @@ export default function ProjectsPage() {
     setDeletingProject(projectName);
 
     try {
-      // TODO: Call delete webhook here
-      // const deleteWebhookUrl = 'your-delete-webhook-url';
-      // const res = await fetch(deleteWebhookUrl, {
-      //   method: 'POST',
-      //   headers: { 
-      //     'Content-Type': 'application/json',
-      //     'ngrok-skip-browser-warning': 'true'
-      //   },
-      //   body: JSON.stringify({ username, project_name: projectName }),
-      // });
-      
-      // For now, just remove from local state
+      const res = await fetch('/api/projects/delete', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, project_name: projectName }),
+      });
+
+      const payload = await res.json();
+
+      if (!res.ok || payload?.success === false) {
+        const message = payload?.error || 'Failed to delete project';
+        throw new Error(message);
+      }
+
       setProjects(prev => prev.filter(p => p.project_name !== projectName));
+      setActionMessage(`Project "${projectName}" deleted successfully.`);
+      setTimeout(() => setActionMessage(""), 3000);
     } catch (e: any) {
       console.error('Error deleting project:', e);
       setError(e?.message || 'Failed to delete project');
@@ -148,6 +154,11 @@ export default function ProjectsPage() {
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+          {actionMessage && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p className="text-sm text-green-700">{actionMessage}</p>
             </div>
           )}
 
